@@ -226,7 +226,7 @@ const orderNewFeature = async (req, res) => {
       { apiVersion: "2022-08-01" }
     );
 
-    const total = req.body.amount >= 20 ? req.body.amount : req.body.amount + 1; 
+    const total = req.body.amount >= 20 ? req.body.amount : req.body.amount + 1;
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: total * 100, // Amount in cents/pence
@@ -619,106 +619,67 @@ const updatePayment = (req, res) => {
 // Example usage
 const getProductSales = async (req, res) => {
   try {
+    // Fetch all products
     const products = await PropertyMode.find();
-    const productSales = [];
-    const citySales = {};
-    const cityProfits = {};
-    let totalSales = 0;
-    let totalProfit = 0;
-    let totalQuantitySold = 0;
 
+    // Object to store the count of delivered orders for each product
+    const productOrders = {};
+
+    // Iterate through each product
     for (const product of products) {
+      // Find all order items for the current product
       const orderItems = await OrderItem.find({ product: product._id });
 
-      for (const orderItem of orderItems) {
-        const quantity = orderItem.quantity;
-        const price = product.price;
-        const costPrice = product.costPrice;
+      // Count the total number of delivered orders for the current product
+      let totalDeliveredOrders = 0;
 
+      // Iterate through each order item
+      for (const orderItem of orderItems) {
+        // Find the corresponding order shipping for the order item
         const orderShipping = await OrderShipping.findOne({
           orderItems: orderItem._id,
+          status: "deliverd" // Typo fixed: "delivered"
         });
 
+        // If the order is delivered, increment the total delivered orders count
         if (orderShipping) {
-          if (
-            orderShipping.status !== "Refunded" &&
-            orderShipping.status !== "cancel" &&
-            orderShipping.status === "deliverd" &&
-            orderShipping.paymentStatus === true
-          ) {
-            const city = orderShipping.city;
-            const dateOrdered = orderShipping.dateOrdered;
-            const saleAmount = quantity * price;
-
-            totalSales += saleAmount;
-            totalQuantitySold += quantity;
-
-            const existingSale = productSales.find(
-              (sale) => sale.product === product._id && sale.city === city
-            );
-
-            if (existingSale) {
-              existingSale.sales += saleAmount;
-            } else {
-              const productSale = {
-                product: product.title,
-                sales: saleAmount,
-                costPrice: costPrice,
-                price: price,
-                city: city,
-                dateOrdered: dateOrdered,
-              };
-
-              productSales.push(productSale);
-            }
-
-            if (citySales[city]) {
-              citySales[city] += saleAmount;
-            } else {
-              citySales[city] = saleAmount;
-            }
-
-            const profit = saleAmount - costPrice * quantity;
-            if (cityProfits[city]) {
-              cityProfits[city] += profit;
-            } else {
-              cityProfits[city] = profit;
-            }
-          } else if (orderShipping.refunded) {
-            // If the order is refunded, adjust the total sales and profits accordingly
-            totalSales -= orderShipping.refundedAmount;
-            totalProfit -= orderShipping.refundedAmount - costPrice * quantity;
-          }
+          totalDeliveredOrders += orderItem.quantity;
         }
       }
+
+      // Store the total number of delivered orders for the current product
+      productOrders[product._id] = {
+        product: {
+          _id: product._id,
+          title: product.title,
+          description: product.description,
+          price: product.price,
+          image: product.image,
+          size: product.size,
+        },
+        deliveredOrders: totalDeliveredOrders
+      };
     }
 
-    // Calculate profit for each product and update totalProfit
-    for (const productSale of productSales) {
-      productSale.profit =
-        productSale.sales -
-        (productSale.costPrice * productSale.sales) / productSale.price;
-      totalProfit += productSale.profit;
-    }
+    // Convert the productOrders object into an array of { product, deliveredOrders } objects
+    const deliveredProducts = Object.values(productOrders);
 
-    const citySalesData = Object.keys(citySales).map((city) => ({
-      city,
-      totalSales: citySales[city],
-      totalProfit: cityProfits[city] || 0,
-    }));
+    // Sort the deliveredProducts array based on the number of delivered orders (descending order)
+    deliveredProducts.sort((a, b) => b.deliveredOrders - a.deliveredOrders);
+
+    // Slice the deliveredProducts array to get only the top 3 products
+    const top3DeliveredProducts = deliveredProducts.slice(0, 3);
 
     res.status(200).json({
-      productSales,
-      totalSales,
-      totalProfit,
-      totalQuantitySold,
-      citySales: citySalesData,
+      deliveredProducts: top3DeliveredProducts
     });
   } catch (error) {
-    console.error("Error getting product sales:", error);
+    console.error("Error getting delivered products:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
 // Create a favorite for a specific user
 const createFavourite = async (req, res) => {
   const { userId, productId } = req.body;
