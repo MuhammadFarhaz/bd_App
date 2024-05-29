@@ -15,7 +15,7 @@ var transport = nodemailer.createTransport({
 const userRegister = async (req, res) => {
   const { name, email, password } = req.body;
   const avatar = req?.files?.avatar?.tempFilePath;
-
+  console.log("kkdfkdf",req.body)
   // Check if the user is already registered and verified
   const existingUser = await AuthModel.findOne({
     email: email,
@@ -93,6 +93,7 @@ const userRegister = async (req, res) => {
         email,
       });
     } catch (error) {
+      console.log("skdkf",error)
       res.send({ status: "failed", message: "Unable to register" });
     }
   } else {

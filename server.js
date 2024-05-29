@@ -5,7 +5,7 @@ const path = require('path')
 const multer = require("multer")
 const fs = require("fs")
 require('dotenv').config();
-const cookieParser =require( "cookie-parser")
+const cookieParser = require("cookie-parser")
 const fileUpload = require("express-fileupload");
 
 
@@ -54,13 +54,12 @@ app.use("/auth", authrouter)
 
 app.use('/groceries', propertyRoute)
 
-// This example sets up an endpoint using the Express framework.
-// Watch this video to get started: https://youtu.be/rPR2aJ6XnAc.
 
 
-app.listen(port, () => {
-  console.log(`server running on port ${port}`);
+app.listen(5001, '0.0.0.0', () => {
+  console.log('Server is running on port 5001');
 });
+
 
 
 

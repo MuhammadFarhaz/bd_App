@@ -1,6 +1,6 @@
 var mongoose = require("mongoose");
 
-const db = "mongodb+srv://awais:yb7DKCYaIOC8cCY9@cluster0.mdlmo.mongodb.net/"
+const db = "mongodb+srv://awais2323:FhC9Tm5Xion0bHiU@cluster0.62yt72c.mongodb.net/"
 
 const setupDB = () => {
   console.log("process.env.DB",);

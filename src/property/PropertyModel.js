@@ -8,7 +8,7 @@ const propertySchema = new Schema({
   description: String,
   price: Number,
   prevPrice: Number,
-  deal:Number,
+  deal: String,
   image: String,
   costPrice: Number,
   stock: {
